@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Saiful Workspace</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+  :root{
+    --ink:#221f1a;
+    --paper:#faf6ee;
+    --card:#ffffff;
+    --line:#e4ddce;
+    --accent:#b5502e;
+    --accent-deep:#8a3c22;
+    --accent-soft:#f3e2d3;
+    --olive:#6f6a52;
+    --mono: "JetBrains Mono", Consolas, monospace;
+    --sans: "Inter", "Helvetica Neue", Arial, sans-serif;
+    --display: "Fraunces", Georgia, serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(1200px 500px at 15% -10%, #fdf1e2 0%, transparent 60%),
+      var(--paper);
+    color:var(--ink);
+    font-family:var(--sans);
+    padding:52px 20px 90px;
+  }
+  .wrap{max-width:820px;margin:0 auto;}
+
+  header{margin-bottom:36px;}
+  .eyebrow{
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:.16em;
+    text-transform:uppercase;
+    color:var(--accent);
+    margin-bottom:10px;
+  }
+  h1{
+    font-family:var(--display);
+    font-size:44px;
+    line-height:1.1;
+    margin:0;
+    font-weight:600;
+    letter-spacing:-0.01em;
+    color:var(--ink);
+  }
+  h1 .letter{
+    display:inline-block;
+    opacity:0;
+    transform:translateY(-18px);
+    animation:dropIn .55s cubic-bezier(.2,.8,.2,1) forwards;
+  }
+  @keyframes dropIn{
+    to{ opacity:1; transform:translateY(0); }
+  }
+
+  .sub-nav{
+    display:flex;gap:8px;margin-bottom:22px;flex-wrap:wrap;
+  }
+  .sub-tab{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:999px;
+    padding:9px 18px;
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+    color:var(--olive);
+    transition:all .15s;
+  }
+  .sub-tab:hover{border-color:var(--accent);color:var(--accent);}
+  .sub-tab.active{background:var(--ink);border-color:var(--ink);color:#fff;}
+
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:26px;
+    margin-bottom:22px;
+    box-shadow:0 1px 2px rgba(34,31,26,0.03), 0 8px 24px -18px rgba(34,31,26,0.25);
+  }
+  .card h2{
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:.09em;
+    color:#9a9382;
+    margin:0 0 18px;
+    font-weight:700;
+  }
+
+  label{display:block;font-size:11px;color:#9a9382;margin-bottom:5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;}
+  input[type=text], input[type=number]{
+    width:100%;
+    padding:10px 12px;
+    border:1px solid var(--line);
+    border-radius:8px;
+    font-family:var(--sans);
+    font-size:14px;
+    background:#fcfaf5;
+    margin-bottom:14px;
+    transition:border-color .15s;
+  }
+  input:focus{outline:none;border-color:var(--accent);}
+
+  .chip-row{display:flex;flex-wrap:wrap;gap:9px;margin-bottom:16px;}
+  .chip{
+    display:flex;align-items:center;gap:6px;
+    background:#fcfaf5;
+    border:1px solid var(--line);
+    border-radius:999px;
+    padding:8px 8px 8px 16px;
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+    color:var(--olive);
+    transition:all .15s;
+  }
+  .chip:hover{border-color:var(--accent);}
+  .chip.selected{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .chip .x{
+    background:none;border:none;cursor:pointer;color:inherit;opacity:.55;font-size:16px;line-height:1;padding:3px 5px;
+  }
+  .chip .x:hover{opacity:1;}
+  .chip-empty{font-size:13px;color:#9a9382;margin-bottom:16px;}
+
+  .add-btn{
+    background:none;
+    border:1px dashed var(--line);
+    color:var(--olive);
+    padding:9px 16px;
+    border-radius:8px;
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+    font-family:var(--sans);
+    transition:all .15s;
+  }
+  .add-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+  .add-form{
+    display:none;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap:12px;
+    margin-top:16px;
+    padding-top:16px;
+    border-top:1px solid var(--line);
+  }
+  .add-form.open{display:grid;}
+  .add-form input{margin-bottom:0;}
+  .add-form .save-btn{
+    grid-column:1/-1;
+    background:var(--ink);color:#fff;border:none;border-radius:8px;
+    padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer;
+    transition:background .15s;
+  }
+  .add-form .save-btn:hover{background:var(--accent);}
+
+  .drop{
+    border:2px dashed var(--line);
+    border-radius:12px;
+    padding:40px 20px;
+    text-align:center;
+    cursor:pointer;
+    transition:border-color .15s, background .15s;
+    background:#fcfaf5;
+  }
+  .drop:hover, .drop.drag{border-color:var(--accent);background:var(--accent-soft);}
+  .drop .big{font-family:var(--display);font-size:17px;font-weight:600;margin-bottom:4px;}
+  .drop .small{font-size:13px;color:#9a9382;}
+  input[type=file]{display:none;}
+
+  .file-block{margin-bottom:22px;}
+  .file-name{font-family:var(--mono);font-size:13px;color:var(--accent-deep);margin-bottom:12px;word-break:break-all;}
+  table{width:100%;border-collapse:collapse;font-size:14px;}
+  th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);}
+  th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#9a9382;font-weight:700;}
+  td.dim{font-family:var(--mono);color:var(--olive);}
+  td.fit{font-weight:700;color:var(--accent-deep);}
+
+  .notice{font-size:13px;color:#9a9382;padding:10px 0;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Personal tools</div>
+    <h1 id="titleText">Saiful Workspace</h1>
+  </header>
+
+  <div class="sub-nav">
+    <div class="sub-tab active" data-tab="pdfsize">PDF Size</div>
+    <div class="sub-tab" data-tab="pcs">How Many Pcs in Sheet</div>
+  </div>
+
+  <!-- PDF Size tab -->
+  <div id="tab-pdfsize">
+    <div class="card">
+      <h2>Upload PDF</h2>
+      <div class="drop" id="dropSize">
+        <div class="big">Drop a PDF here, or click to browse</div>
+        <div class="small">Shows each page's real-world size in cm</div>
+      </div>
+      <input type="file" id="fileSize" accept="application/pdf">
+    </div>
+    <div class="card" id="cardSizeResults" style="display:none;">
+      <h2>Page sizes</h2>
+      <div id="resultsSize"></div>
+    </div>
+  </div>
+
+  <!-- Pcs in Sheet tab -->
+  <div id="tab-pcs" style="display:none;">
+    <div class="card">
+      <h2>Sheet size</h2>
+      <div class="chip-row" id="chipRow"></div>
+      <div class="chip-empty" id="chipEmpty" style="display:none;">No saved sheet sizes yet — add one below.</div>
+      <button class="add-btn" id="addSheetBtn">+ Add sheet size</button>
+      <div class="add-form" id="addForm">
+        <div>
+          <label>Name</label>
+          <input type="text" id="newName" placeholder="e.g. A3+">
+        </div>
+        <div>
+          <label>Width (cm)</label>
+          <input type="number" step="0.1" id="newW" placeholder="48.7">
+        </div>
+        <div>
+          <label>Height (cm)</label>
+          <input type="number" step="0.1" id="newH" placeholder="33">
+        </div>
+        <button class="save-btn" id="saveSheetBtn">Save sheet size</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Upload PDF</h2>
+      <div class="drop" id="dropPcs">
+        <div class="big">Drop a PDF here, or click to browse</div>
+        <div class="small">Fit is checked against the selected sheet size above</div>
+      </div>
+      <input type="file" id="filePcs" accept="application/pdf">
+    </div>
+
+    <div class="card" id="cardPcsResults" style="display:none;">
+      <h2>Fit per page</h2>
+      <div id="resultsPcs"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ---------------- Title letter animation (first load only) ---------------- */
+(function(){
+  const el = document.getElementById('titleText');
+  const text = el.textContent;
+  el.textContent = '';
+  [...text].forEach((ch, i) => {
+    const span = document.createElement('span');
+    span.className = 'letter';
+    span.style.animationDelay = (i * 0.045) + 's';
+    span.textContent = ch === ' ' ? '\u00A0' : ch;
+    el.appendChild(span);
+  });
+})();
+
+/* ---------------- Sub-tab navigation ---------------- */
+document.querySelectorAll('.sub-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.sub-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.querySelectorAll('[id^="tab-"]').forEach(panel => panel.style.display = 'none');
+    document.getElementById('tab-' + tab.dataset.tab).style.display = '';
+  });
+});
+
+/* ---------------- PDF helpers ---------------- */
+pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+function pointsToCm(p){ return p / 72 * 2.54; }
+function countFit(sheetW, sheetH, itemW, itemH, margin){
+  const w1 = itemW + margin, h1 = itemH + margin;
+  const w2 = itemH + margin, h2 = itemW + margin;
+  const fit1 = Math.floor(sheetW / w1) * Math.floor(sheetH / h1);
+  const fit2 = Math.floor(sheetW / w2) * Math.floor(sheetH / h2);
+  return Math.max(fit1, fit2);
+}
+
+function setupDrop(dropId, fileInputId, onFile){
+  const drop = document.getElementById(dropId);
+  const fileInput = document.getElementById(fileInputId);
+  drop.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', e => { if(e.target.files[0]) onFile(e.target.files[0]); });
+  ['dragover','dragenter'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('drag'); }));
+  ['dragleave','drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('drag'); }));
+  drop.addEventListener('drop', e => {
+    const f = e.dataTransfer.files[0];
+    if(f && f.type === 'application/pdf') onFile(f);
+  });
+}
+
+/* ---------------- PDF Size tab ---------------- */
+setupDrop('dropSize', 'fileSize', async (file) => {
+  const card = document.getElementById('cardSizeResults');
+  const results = document.getElementById('resultsSize');
+  card.style.display = 'block';
+  const block = document.createElement('div');
+  block.className = 'file-block';
+  block.innerHTML = `<div class="file-name">${file.name}</div><div class="notice">Reading pages…</div>`;
+  results.prepend(block);
+
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+  let rows = '';
+  for(let p = 1; p <= pdf.numPages; p++){
+    const page = await pdf.getPage(p);
+    const vp = page.getViewport({ scale: 1 });
+    const wCm = Math.round(pointsToCm(vp.width) * 100) / 100;
+    const hCm = Math.round(pointsToCm(vp.height) * 100) / 100;
+    rows += `<tr><td>${p}</td><td class="dim">${wCm}cm × ${hCm}cm</td></tr>`;
+  }
+  block.innerHTML = `
+    <div class="file-name">${file.name}</div>
+    <table><thead><tr><th>Page</th><th>Size</th></tr></thead><tbody>${rows}</tbody></table>
+  `;
+});
+
+/* ---------------- Sheet size manager (localStorage, persists between sessions) ---------------- */
+const EDGE_TRIM = 0.5;   // cm trimmed off each edge -> printable size
+const ITEM_MARGIN = 0.3; // cm gap between items when fitting
+const STORAGE_KEY = 'saiful_workspace_sheets_v1';
+const SELECTED_KEY = 'saiful_workspace_selected_sheet_v1';
+
+function loadSheets(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  }catch(e){
+    console.error('Could not read saved sheet sizes:', e);
+    return [];
+  }
+}
+function saveSheets(list){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+  }catch(e){
+    console.error('Could not save sheet sizes:', e);
+    alert('Sheet size save করা যায়নি। Browser এর storage permission/incognito mode চেক করুন।');
+  }
+}
+function getSelectedSheetId(){ return localStorage.getItem(SELECTED_KEY) || ''; }
+function setSelectedSheetId(id){ localStorage.setItem(SELECTED_KEY, id); }
+
+let sheets = loadSheets();
+
+function renderChips(){
+  const row = document.getElementById('chipRow');
+  const empty = document.getElementById('chipEmpty');
+  row.innerHTML = '';
+  if(sheets.length === 0){ empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  const selectedId = getSelectedSheetId();
+  sheets.forEach(s => {
+    const chip = document.createElement('div');
+    chip.className = 'chip' + (s.id === selectedId ? ' selected' : '');
+    chip.innerHTML = `<span>${s.name}</span><button class="x" data-id="${s.id}" title="Remove">×</button>`;
+    chip.addEventListener('click', (e) => {
+      if(e.target.classList.contains('x')) return;
+      setSelectedSheetId(s.id);
+      renderChips();
+      renderPcsIfReady();
+    });
+    row.appendChild(chip);
+  });
+  row.querySelectorAll('.x').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const id = e.target.dataset.id;
+      sheets = sheets.filter(s => s.id !== id);
+      saveSheets(sheets);
+      if(getSelectedSheetId() === id) setSelectedSheetId('');
+      renderChips();
+      renderPcsIfReady();
+    });
+  });
+}
+renderChips();
+
+document.getElementById('addSheetBtn').addEventListener('click', () => {
+  document.getElementById('addForm').classList.toggle('open');
+});
+
+document.getElementById('saveSheetBtn').addEventListener('click', () => {
+  const name = document.getElementById('newName').value.trim();
+  const w = parseFloat(document.getElementById('newW').value);
+  const h = parseFloat(document.getElementById('newH').value);
+  if(!name || !w || !h){ alert('Name, width, height সব দিতে হবে।'); return; }
+  const printableW = Math.round((w - EDGE_TRIM*2) * 100) / 100;
+  const printableH = Math.round((h - EDGE_TRIM*2) * 100) / 100;
+  const id = 'sheet_' + Date.now();
+  sheets.push({ id, name, fullW: w, fullH: h, printableW, printableH });
+  saveSheets(sheets);
+  setSelectedSheetId(id);
+  document.getElementById('newName').value = '';
+  document.getElementById('newW').value = '';
+  document.getElementById('newH').value = '';
+  document.getElementById('addForm').classList.remove('open');
+  renderChips();
+  renderPcsIfReady();
+});
+
+/* ---------------- Pcs-in-sheet tab ---------------- */
+let lastPdfPages = null;
+
+async function readPdfPageSizes(file){
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+  const pages = [];
+  for(let p = 1; p <= pdf.numPages; p++){
+    const page = await pdf.getPage(p);
+    const vp = page.getViewport({ scale: 1 });
+    pages.push({
+      page: p,
+      w: Math.round(pointsToCm(vp.width) * 100) / 100,
+      h: Math.round(pointsToCm(vp.height) * 100) / 100
+    });
+  }
+  return pages;
+}
+
+function renderPcsIfReady(){
+  if(!lastPdfPages) return;
+  const card = document.getElementById('cardPcsResults');
+  const results = document.getElementById('resultsPcs');
+  card.style.display = 'block';
+  const selectedId = getSelectedSheetId();
+  const sheet = sheets.find(s => s.id === selectedId);
+
+  if(!sheet){
+    results.innerHTML = `<div class="notice">প্রথমে উপরে থেকে একটা sheet size select করুন।</div>`;
+    return;
+  }
+
+  let rows = '';
+  lastPdfPages.forEach(pg => {
+    const qty = countFit(sheet.printableW, sheet.printableH, pg.w, pg.h, ITEM_MARGIN);
+    rows += `<tr><td>${pg.page}</td><td class="dim">${pg.w}cm × ${pg.h}cm</td><td class="fit">${qty > 0 ? qty + ' pcs' : '—'}</td></tr>`;
+  });
+  results.innerHTML = `
+    <div class="notice" style="margin-bottom:10px;">Sheet: <strong>${sheet.name}</strong></div>
+    <table><thead><tr><th>Page</th><th>Size</th><th>Fit</th></tr></thead><tbody>${rows}</tbody></table>
+  `;
+}
+
+setupDrop('dropPcs', 'filePcs', async (file) => {
+  lastPdfPages = await readPdfPageSizes(file);
+  renderPcsIfReady();
+});
+</script>
+</body>
+</html>
