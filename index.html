@@ -110,26 +110,27 @@
   }
   input:focus{outline:none;border-color:var(--accent);}
 
-  .chip-row{display:flex;flex-wrap:wrap;gap:9px;margin-bottom:16px;}
-  .chip{
-    display:flex;align-items:center;gap:6px;
-    background:#fcfaf5;
+  .sheet-select-row{display:flex;gap:10px;align-items:center;margin-bottom:16px;}
+  select#sheetSelect{
+    flex:1;
+    padding:11px 12px;
     border:1px solid var(--line);
-    border-radius:999px;
-    padding:8px 8px 8px 16px;
-    font-size:13px;
+    border-radius:8px;
+    font-family:var(--sans);
+    font-size:14px;
     font-weight:600;
+    background:#fcfaf5;
+    color:var(--ink);
     cursor:pointer;
-    color:var(--olive);
-    transition:all .15s;
+    transition:border-color .15s;
   }
-  .chip:hover{border-color:var(--accent);}
-  .chip.selected{background:var(--accent);border-color:var(--accent);color:#fff;}
-  .chip .x{
-    background:none;border:none;cursor:pointer;color:inherit;opacity:.55;font-size:16px;line-height:1;padding:3px 5px;
+  select#sheetSelect:focus{outline:none;border-color:var(--accent);}
+  .remove-link{
+    background:none;border:1px solid var(--line);color:var(--olive);
+    border-radius:8px;padding:11px 14px;font-size:13px;font-weight:600;cursor:pointer;
+    white-space:nowrap;transition:all .15s;
   }
-  .chip .x:hover{opacity:1;}
-  .chip-empty{font-size:13px;color:#9a9382;margin-bottom:16px;}
+  .remove-link:hover{border-color:var(--accent);color:var(--accent);}
 
   .add-btn{
     background:none;
@@ -221,9 +222,10 @@
   <div id="tab-pcs" style="display:none;">
     <div class="card">
       <h2>Sheet size</h2>
-      <div class="chip-row" id="chipRow"></div>
-      <div class="chip-empty" id="chipEmpty" style="display:none;">No saved sheet sizes yet — add one below.</div>
-      <button class="add-btn" id="addSheetBtn">+ Add sheet size</button>
+      <div class="sheet-select-row">
+        <select id="sheetSelect"></select>
+        <button class="remove-link" id="removeSheetBtn">Remove</button>
+      </div>
       <div class="add-form" id="addForm">
         <div>
           <label>Name</label>
@@ -359,43 +361,73 @@ function saveSheets(list){
 function getSelectedSheetId(){ return localStorage.getItem(SELECTED_KEY) || ''; }
 function setSelectedSheetId(id){ localStorage.setItem(SELECTED_KEY, id); }
 
+function makeSheet(name, fullW, fullH, id){
+  const printableW = Math.round((fullW - EDGE_TRIM*2) * 100) / 100;
+  const printableH = Math.round((fullH - EDGE_TRIM*2) * 100) / 100;
+  return { id, name, fullW, fullH, printableW, printableH };
+}
+
 let sheets = loadSheets();
 
-function renderChips(){
-  const row = document.getElementById('chipRow');
-  const empty = document.getElementById('chipEmpty');
-  row.innerHTML = '';
-  if(sheets.length === 0){ empty.style.display = 'block'; return; }
-  empty.style.display = 'none';
-  const selectedId = getSelectedSheetId();
-  sheets.forEach(s => {
-    const chip = document.createElement('div');
-    chip.className = 'chip' + (s.id === selectedId ? ' selected' : '');
-    chip.innerHTML = `<span>${s.name}</span><button class="x" data-id="${s.id}" title="Remove">×</button>`;
-    chip.addEventListener('click', (e) => {
-      if(e.target.classList.contains('x')) return;
-      setSelectedSheetId(s.id);
-      renderChips();
-      renderPcsIfReady();
-    });
-    row.appendChild(chip);
-  });
-  row.querySelectorAll('.x').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const id = e.target.dataset.id;
-      sheets = sheets.filter(s => s.id !== id);
-      saveSheets(sheets);
-      if(getSelectedSheetId() === id) setSelectedSheetId('');
-      renderChips();
-      renderPcsIfReady();
-    });
-  });
+// Seed default sheet sizes the very first time the tool is used
+if(sheets.length === 0 && !localStorage.getItem(STORAGE_KEY + '_seeded')){
+  sheets = [
+    makeSheet('A3+ (48.7x33cm)', 48.7, 33, 'sheet_default_a3plus'),
+    makeSheet('Longsheet (70x33cm)', 70, 33, 'sheet_default_longsheet')
+  ];
+  saveSheets(sheets);
+  localStorage.setItem(STORAGE_KEY + '_seeded', '1');
+  setSelectedSheetId(sheets[0].id);
 }
-renderChips();
 
-document.getElementById('addSheetBtn').addEventListener('click', () => {
-  document.getElementById('addForm').classList.toggle('open');
+const ADD_MORE_VALUE = '__add_more__';
+
+function renderDropdown(){
+  const select = document.getElementById('sheetSelect');
+  const removeBtn = document.getElementById('removeSheetBtn');
+  const selectedId = getSelectedSheetId();
+  select.innerHTML = '';
+
+  sheets.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s.id;
+    opt.textContent = s.name;
+    if(s.id === selectedId) opt.selected = true;
+    select.appendChild(opt);
+  });
+
+  const addOpt = document.createElement('option');
+  addOpt.value = ADD_MORE_VALUE;
+  addOpt.textContent = '+ Add More Sizes';
+  select.appendChild(addOpt);
+
+  removeBtn.style.display = sheets.length > 0 ? '' : 'none';
+}
+renderDropdown();
+
+document.getElementById('sheetSelect').addEventListener('change', (e) => {
+  const val = e.target.value;
+  if(val === ADD_MORE_VALUE){
+    document.getElementById('addForm').classList.add('open');
+    // revert dropdown back to whatever was actually selected before
+    renderDropdown();
+    return;
+  }
+  document.getElementById('addForm').classList.remove('open');
+  setSelectedSheetId(val);
+  renderPcsIfReady();
+});
+
+document.getElementById('removeSheetBtn').addEventListener('click', () => {
+  const selectedId = getSelectedSheetId();
+  const sheet = sheets.find(s => s.id === selectedId);
+  if(!sheet) return;
+  if(!confirm(`"${sheet.name}" মুছে ফেলতে চান?`)) return;
+  sheets = sheets.filter(s => s.id !== selectedId);
+  saveSheets(sheets);
+  setSelectedSheetId(sheets.length ? sheets[0].id : '');
+  renderDropdown();
+  renderPcsIfReady();
 });
 
 document.getElementById('saveSheetBtn').addEventListener('click', () => {
@@ -403,17 +435,15 @@ document.getElementById('saveSheetBtn').addEventListener('click', () => {
   const w = parseFloat(document.getElementById('newW').value);
   const h = parseFloat(document.getElementById('newH').value);
   if(!name || !w || !h){ alert('Name, width, height সব দিতে হবে।'); return; }
-  const printableW = Math.round((w - EDGE_TRIM*2) * 100) / 100;
-  const printableH = Math.round((h - EDGE_TRIM*2) * 100) / 100;
   const id = 'sheet_' + Date.now();
-  sheets.push({ id, name, fullW: w, fullH: h, printableW, printableH });
+  sheets.push(makeSheet(name, w, h, id));
   saveSheets(sheets);
   setSelectedSheetId(id);
   document.getElementById('newName').value = '';
   document.getElementById('newW').value = '';
   document.getElementById('newH').value = '';
   document.getElementById('addForm').classList.remove('open');
-  renderChips();
+  renderDropdown();
   renderPcsIfReady();
 });
 
