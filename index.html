@@ -197,7 +197,7 @@
     <h1 id="titleText">Saiful Workspace</h1>
   </header>
 
-  <div class="sub-nav">
+  <div class="sub-nav" id="mainNav">
     <div class="sub-tab active" data-tab="pdfsize">PDF Size</div>
     <div class="sub-tab" data-tab="pcs">How Many Pcs in Sheet</div>
   </div>
@@ -295,10 +295,10 @@
   });
 })();
 
-/* ---------------- Sub-tab navigation ---------------- */
-document.querySelectorAll('.sub-tab').forEach(tab => {
+/* ---------------- Sub-tab navigation (top-level: PDF Size / How Many Pcs in Sheet) ---------------- */
+document.querySelectorAll('#mainNav .sub-tab').forEach(tab => {
   tab.addEventListener('click', () => {
-    document.querySelectorAll('.sub-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('#mainNav .sub-tab').forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
     document.querySelectorAll('[id^="tab-"]').forEach(panel => panel.style.display = 'none');
     document.getElementById('tab-' + tab.dataset.tab).style.display = '';
