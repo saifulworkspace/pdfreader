@@ -111,8 +111,9 @@
   input:focus{outline:none;border-color:var(--accent);}
 
   .sheet-select-row{display:flex;gap:10px;align-items:center;margin-bottom:16px;}
-  select#sheetSelect{
+  .select-field, select#sheetSelect{
     flex:1;
+    width:100%;
     padding:11px 12px;
     border:1px solid var(--line);
     border-radius:8px;
@@ -124,7 +125,7 @@
     cursor:pointer;
     transition:border-color .15s;
   }
-  select#sheetSelect:focus{outline:none;border-color:var(--accent);}
+  .select-field:focus, select#sheetSelect:focus{outline:none;border-color:var(--accent);}
   .remove-link{
     background:none;border:1px solid var(--line);color:var(--olive);
     border-radius:8px;padding:11px 14px;font-size:13px;font-weight:600;cursor:pointer;
@@ -200,6 +201,7 @@
   <div class="sub-nav" id="mainNav">
     <div class="sub-tab active" data-tab="pdfsize">PDF Size</div>
     <div class="sub-tab" data-tab="pcs">How Many Pcs in Sheet</div>
+    <div class="sub-tab" data-tab="modify">Size Modify</div>
   </div>
 
   <!-- PDF Size tab -->
@@ -233,11 +235,11 @@
         </div>
         <div>
           <label>Width (cm)</label>
-          <input type="number" step="0.1" id="newW" placeholder="xoxo">
+          <input type="number" step="0.1" id="newW" placeholder="xxx">
         </div>
         <div>
           <label>Height (cm)</label>
-          <input type="number" step="0.1" id="newH" placeholder="xoxo">
+          <input type="number" step="0.1" id="newH" placeholder="xxx">
         </div>
         <button class="save-btn" id="saveSheetBtn">Save sheet size</button>
       </div>
@@ -262,11 +264,11 @@
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
         <div>
           <label>Width (cm)</label>
-          <input type="number" step="0.1" id="manualW" placeholder="xoxo">
+          <input type="number" step="0.1" id="manualW" placeholder="xxx">
         </div>
         <div>
           <label>Height (cm)</label>
-          <input type="number" step="0.1" id="manualH" placeholder="xoxo">
+          <input type="number" step="0.1" id="manualH" placeholder="xxx">
         </div>
       </div>
       <button class="save-btn" id="checkFitBtn" style="margin-top:2px;">Check fit</button>
@@ -275,6 +277,32 @@
     <div class="card" id="cardPcsResults" style="display:none;">
       <h2>Fit per page</h2>
       <div id="resultsPcs"></div>
+    </div>
+  </div>
+
+  <!-- Size Modify tab -->
+  <div id="tab-modify" style="display:none;">
+    <div class="card">
+      <h2>Upload PDF</h2>
+      <div class="drop" id="dropModify">
+        <div class="big">Drop a PDF here, or click to browse</div>
+        <div class="small">Original size will be read from the PDF</div>
+      </div>
+      <input type="file" id="fileModify" accept="application/pdf">
+    </div>
+
+    <div class="card" id="cardModify" style="display:none;">
+      <h2>Resize</h2>
+      <div id="modifyBaseSelectWrap"></div>
+      <div class="notice" id="modifyOriginalNote" style="margin-bottom:14px;"></div>
+      <label style="display:flex;align-items:center;gap:8px;text-transform:none;font-weight:600;color:var(--olive);margin-bottom:16px;cursor:pointer;">
+        <input type="checkbox" id="constrainProp" checked style="width:auto;margin:0;">
+        Constrain Proportions
+      </label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+        <div><label>Width (cm)</label><input type="number" step="0.01" id="modifyW"></div>
+        <div><label>Height (cm)</label><input type="number" step="0.01" id="modifyH"></div>
+      </div>
     </div>
   </div>
 
@@ -587,6 +615,61 @@ document.getElementById('checkFitBtn').addEventListener('click', () => {
   if(!w || !h){ alert('Width আর height দুটোই দিতে হবে।'); return; }
   manualEntry = { w: Math.round(w * 100) / 100, h: Math.round(h * 100) / 100 };
   renderPcsIfReady();
+});
+
+/* ---------------- Size Modify tab ---------------- */
+let modifyBaseGroups = null;
+let modifyOriginal = { w: 0, h: 0 };
+
+function setModifyBase(group){
+  modifyOriginal = { w: group.w, h: group.h };
+  document.getElementById('modifyW').value = group.w;
+  document.getElementById('modifyH').value = group.h;
+  document.getElementById('modifyOriginalNote').textContent = `Original: ${group.w}cm × ${group.h}cm`;
+}
+
+function renderModifyBaseSelect(){
+  const wrap = document.getElementById('modifyBaseSelectWrap');
+  if(modifyBaseGroups.length <= 1){
+    wrap.innerHTML = '';
+    setModifyBase(modifyBaseGroups[0]);
+    return;
+  }
+  wrap.innerHTML = `<label>Base size (multiple page sizes found)</label><select class="select-field" id="modifyBaseSelect" style="margin-bottom:14px;"></select>`;
+  const sel = document.getElementById('modifyBaseSelect');
+  modifyBaseGroups.forEach((g, i) => {
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = `Pages ${formatPageRange(g.pageNumbers)} — ${g.w}cm × ${g.h}cm`;
+    sel.appendChild(opt);
+  });
+  sel.addEventListener('change', () => setModifyBase(modifyBaseGroups[sel.value]));
+  setModifyBase(modifyBaseGroups[0]);
+}
+
+setupDrop('dropModify', 'fileModify', async (file) => {
+  const pages = await readPdfPageSizes(file);
+  modifyBaseGroups = groupPagesBySize(pages);
+  document.getElementById('cardModify').style.display = 'block';
+  renderModifyBaseSelect();
+});
+
+document.getElementById('modifyW').addEventListener('input', (e) => {
+  if(!document.getElementById('constrainProp').checked) return;
+  if(!modifyOriginal.w) return;
+  const w = parseFloat(e.target.value);
+  if(!w){ return; }
+  const ratio = modifyOriginal.h / modifyOriginal.w;
+  document.getElementById('modifyH').value = Math.round(w * ratio * 100) / 100;
+});
+
+document.getElementById('modifyH').addEventListener('input', (e) => {
+  if(!document.getElementById('constrainProp').checked) return;
+  if(!modifyOriginal.h) return;
+  const h = parseFloat(e.target.value);
+  if(!h){ return; }
+  const ratio = modifyOriginal.w / modifyOriginal.h;
+  document.getElementById('modifyW').value = Math.round(h * ratio * 100) / 100;
 });
 
 </script>
